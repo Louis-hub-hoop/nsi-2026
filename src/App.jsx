@@ -5308,25 +5308,28 @@ Tu réponds en français uniquement. Tu es M. Morandino, pas un assistant IA.${s
     })}</span>;
   });
 
-  const send = async () => {
-    const text = input.trim();
-    if (!text || loading) return;
-    const newMsgs = [...messages, { role:'user', content:text }];
-    setMessages(newMsgs); setInput(''); setLoading(true);
-    try {
-      const res = await fetch('/api/chat', {
-        method:'POST', headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({ model:'claude-sonnet-4-20250514', max_tokens:1000, system:buildSystem(currentSubjectId),
-          messages: newMsgs.map(m=>({role:m.role,content:m.content})) })
-      });
-      const data = await res.json();
-      const reply = data.content?.map(c=>c.text||'').join('') || "Je n'ai pas pu repondre.";
-      setMessages(prev => [...prev, { role:'assistant', content:reply }]);
-    } catch {
-      setMessages(prev => [...prev, { role:'assistant', content:'Erreur reseau. Reessayez !' }]);
-    }
-    setLoading(false);
-  };
+const send = async () => {
+  const text = input.trim();
+  if (!text || loading) return;
+  const newMsgs = [...messages, { role:'user', content:text }];
+  setMessages(newMsgs); setInput(''); setLoading(true);
+  try {
+    const res = await fetch('/api/chat', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        system: buildSystem(currentSubjectId),
+        messages: newMsgs.map(m=>({role:m.role, content:m.content}))
+      })
+    });
+    const data = await res.json();
+    const reply = data.choices?.[0]?.message?.content || "Je n'ai pas pu répondre.";
+    setMessages(prev=>[...prev,{role:'assistant',content:reply}]);
+  } catch {
+    setMessages(prev=>[...prev,{role:'assistant',content:"Erreur réseau. Réessayez !"}]);
+  }
+  setLoading(false);
+};
 
   const sugg = ['Expliquez le codage RLE','Qu est-ce que le k-NN ?','Bug du remove() sujet 4','Aide SQL sujet 15','Flottants et BCD sujet 8'];
 
