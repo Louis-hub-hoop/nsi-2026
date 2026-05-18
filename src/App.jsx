@@ -5265,19 +5265,19 @@ function Chatbot({ onClose, currentSubjectId }) {
   useEffect(() => { bottomRef.current?.scrollIntoView({ behavior:'smooth' }); }, [messages]);
 
   const buildSystem = (currentSubjectId) => {
-  const subjectContext = currentSubjectId ? (() => {
-    const meta = META[currentSubjectId];
-    const corrs = CORRECTIONS[currentSubjectId] || [];
-    const corrsSummary = corrs.map(q => `${q.q}\n${q.explication||''}`).join('\n\n');
-    return `\n\nSujet actuel : Sujet ${currentSubjectId} — "${meta?.titre}"\n\nCorrections :\n${corrsSummary.slice(0, 2000)}`;
-  })() : '';
+    const subjectContext = currentSubjectId ? (() => {
+      const meta = META[currentSubjectId];
+      const corrs = CORRECTIONS[currentSubjectId] || [];
+      const corrsSummary = corrs.map(q => `${q.q}\n${(q.explication||q.r||'').slice(0,300)}`).join('\n\n');
+      return `\n\nSujet actuel : Sujet ${currentSubjectId} — "${meta?.titre}" (thème: ${meta?.theme}, difficulté: ${meta?.diff})\n\nCorrections résumées :\n${corrsSummary.slice(0,2000)}`;
+    })() : '';
 
-  return `Tu es M. Morandino, professeur de NSI en Terminale. Passionné, exigeant, pédagogue.
-
-EXPRESSIONS : "Non mais STOP.", "Non mais arrêtez...", "Non mais... Lenny Arnoult !", "Vous parlez, vous sortez.", "Voilà ! EXACTEMENT !"
-RÈGLES : vouvoiement systématique, MAJUSCULES pour l'emphase, langage soutenu.
+    return `Tu es M. Morandino, professeur de NSI en Terminale. Passionné, exigeant, pédagogue.
+Expressions : "Non mais STOP.", "Non mais arrêtez...", "Non mais... Lenny Arnoult !", "Vous parlez, vous sortez.", "Voilà ! EXACTEMENT !"
+Règles : vouvoiement SYSTÉMATIQUE, MAJUSCULES pour l'emphase, langage soutenu.
+23 sujets NSI 2026 : S1-RLE, S2-Salaires kNN, S3-Cycle menstruel, S4-Plantes POO, S5-Empreinte JSON, S6-Smoothies, S7-Coccinelles, S8-Flottants BCD, S9-3D POO, S10-Compteurs eau, S11-Renards kNN, S12-Refuge CSV, S13-Ballon sonde, S14-Evacuation, S15-SQL vétérinaire, S16-Warming stripes, S17-Handball, S18-Températures Polynésie, S19-Réservoirs, S20-Empreinte CO2, S21-Flashcards, S22-QR Codes, S23-DEMETER.
 Réponds en français uniquement.${subjectContext}`;
-};
+  };
 
   const renderMsg = (content) => content.split(/(```[\s\S]*?```)/g).map((part,i) => {
     if (part.startsWith('```')) {
@@ -5291,28 +5291,28 @@ Réponds en français uniquement.${subjectContext}`;
     })}</span>;
   });
 
-const send = async () => {
-  const text = input.trim();
-  if (!text || loading) return;
-  const newMsgs = [...messages, { role:'user', content:text }];
-  setMessages(newMsgs); setInput(''); setLoading(true);
-  try {
-    const res = await fetch('/api/chat', {
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({
-        system: buildSystem(currentSubjectId),
-        messages: newMsgs.map(m=>({role:m.role, content:m.content}))
-      })
-    });
-    const data = await res.json();
-    const reply = data.choices?.[0]?.message?.content || "Je n'ai pas pu répondre.";
-    setMessages(prev=>[...prev,{role:'assistant',content:reply}]);
-  } catch {
-    setMessages(prev=>[...prev,{role:'assistant',content:"Erreur réseau. Réessayez !"}]);
-  }
-  setLoading(false);
-};
+  const send = async () => {
+    const text = input.trim();
+    if (!text || loading) return;
+    const newMsgs = [...messages, { role:'user', content:text }];
+    setMessages(newMsgs); setInput(''); setLoading(true);
+    try {
+      const res = await fetch('/api/chat', {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({
+          system: buildSystem(currentSubjectId),
+          messages: newMsgs.map(m=>({role:m.role, content:m.content}))
+        })
+      });
+      const data = await res.json();
+      const reply = data.choices?.[0]?.message?.content || "Je n'ai pas pu repondre.";
+      setMessages(prev => [...prev, { role:'assistant', content:reply }]);
+    } catch {
+      setMessages(prev => [...prev, { role:'assistant', content:'Erreur reseau. Reessayez !' }]);
+    }
+    setLoading(false);
+  };
 
   const sugg = ['Expliquez le codage RLE','Qu est-ce que le k-NN ?','Bug du remove() sujet 4','Aide SQL sujet 15','Flottants et BCD sujet 8'];
 
